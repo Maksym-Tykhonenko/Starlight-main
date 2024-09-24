@@ -10,7 +10,6 @@ import {
   WelcomeScreen,
 } from './screen';
 import {AppProvider} from './store/context';
-
 import {TabArticle, TabConstell, TabUser} from './components/icon';
 import {
   View,
@@ -24,6 +23,10 @@ import {resetPlayer, setupPlayer} from './components/sound/setupPlayer';
 import {useEffect, useRef, useState} from 'react';
 import StarlightProdactScreen from './screen/StarlightProdactScreen';
 import VolumeControl from './components/sound/VolumeControl';
+import ReactNativeIdfaAaid, {
+  AdvertisingInfoResponse,
+} from '@sparkfabrik/react-native-idfa-aaid';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -91,6 +94,93 @@ const TabNavigator = () => {
 const App = () => {
   const [route, setRoute] = useState(true);
   //console.log('route==>', route)
+  const [idfa, setIdfa] = useState();
+  console.log('idfa==>', idfa);
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  useEffect(() => {
+    setData();
+  }, [
+    idfa,
+    //appsUid,
+    //sab1,
+    //pid,
+    //adServicesToken,
+    //adServicesAtribution,
+    //adServicesKeywordId,
+  ]);
+
+  const setData = async () => {
+    try {
+      const data = {
+        idfa,
+        //appsUid,
+        //sab1,
+        //pid,
+        //adServicesToken,
+        //adServicesAtribution,
+        //adServicesKeywordId,
+      };
+      const jsonData = JSON.stringify(data);
+      await AsyncStorage.setItem('App', jsonData);
+      //console.log('Дані збережено в AsyncStorage');
+    } catch (e) {
+      //console.log('Помилка збереження даних:', e);
+    }
+  };
+
+  const getData = async () => {
+    try {
+      const jsonData = await AsyncStorage.getItem('App');
+      if (jsonData !== null) {
+        const parsedData = JSON.parse(jsonData);
+        console.log('Дані дістаються в AsyncStorage');
+        console.log('parsedData in App==>', parsedData);
+        setIdfa(parsedData.idfa);
+        //setAppsUid(parsedData.appsUid);
+        //setSab1(parsedData.sab1);
+        //setPid(parsedData.pid);
+        //setAdServicesToken(parsedData.adServicesToken);
+        //setAdServicesAtribution(parsedData.adServicesAtribution);
+        //setAdServicesKeywordId(parsedData.adServicesKeywordId);
+      } else {
+        await fetchIdfa();
+        //await requestOneSignallFoo();
+        //await performAppsFlyerOperations();
+        //await getUidApps();
+        //await fetchAdServicesToken(); // Вставка функції для отримання токену
+        //await fetchAdServicesAttributionData(); // Вставка функції для отримання даних
+
+        //onInstallConversionDataCanceller();
+      }
+    } catch (e) {
+      console.log('Помилка отримання даних:', e);
+    }
+  };
+
+  ///////// IDFA
+  const fetchIdfa = async () => {
+    try {
+      const res = await ReactNativeIdfaAaid.getAdvertisingInfo();
+      if (!res.isAdTrackingLimited) {
+        setIdfa(res.id);
+        //console.log('setIdfa(res.id);');
+      } else {
+        //console.log('Ad tracking is limited');
+        setIdfa(true); //true
+        //setIdfa(null);
+        fetchIdfa();
+        //Alert.alert('idfa', idfa);
+      }
+    } catch (err) {
+      //console.log('err', err);
+      setIdfa(null);
+      await fetchIdfa(); //???
+    }
+  };
 
   ///////// Route useEff
   //
